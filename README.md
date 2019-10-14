@@ -15,7 +15,11 @@ It's quite messy...
 AT triangle model. 
 
 ### Findings
-I'm pretty sure the online orientation is amazing.
+I'm pretty sure the online orientation is amazing. Amazingness will be reported and discussed using the AT triangle framework. 
 
 ### Conclusion
+
+
+### Bonus question
+If you eat yourself, will you get bigger, smaller or stay the same? 
 
