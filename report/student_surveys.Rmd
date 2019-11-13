@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(ggplot2)
 library(ggrepel)
+library(RColorBrewer)
 
 dt <- fread("../data/educ893_at_proj.csv", sep = ",")
 ```
@@ -41,6 +42,7 @@ setnames(dt, names(dt), c("section", "q", "q_type", "q_title", "q_text", "bonus"
 
 # remove trailing space and some symbols
 dt[, answer := gsub("Â.|â€™", "", answer)]
+dt[, answer := gsub("Jan-19", "Spring 2019", answer)]
 
 dt[section %like% "User", unique(section)]
 ```
@@ -66,7 +68,6 @@ ggplot(psd, aes(x=answer, fill=answer)) +
         legend.position = "none", title = element_text(size=18)) +
   xlab("") + 
   ylab("Number of students") +
-  ggtitle("Is this your first time attending a post-secondary \ninstitute?") +
   scale_y_continuous(breaks=seq(0, 8, 1))
 ```
 
@@ -90,8 +91,7 @@ ggplot(term, aes(x=answer, fill=answer)) +
         axis.title = element_text(face="bold", size=18), 
         legend.position = "none", title = element_text(size=18)) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("Which term did you start the CIT program?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q2, echo=FALSE, eval=FALSE}
@@ -112,21 +112,30 @@ dt[q_text == "What do you think is the purpose of the online orientation?", answ
 info <- dt[q_text == "Please indicate if you use the online orientation to find information about the following topics:" & responses == 1]
 info[, answer_match := factor(answer_match, levels = c("Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"))]
 
+info <- merge(info, term, by = "section")
+info[, answer.y := factor(answer.y, levels = c("Fall 2018", "Fall 2019", "Spring 2019", "Other"))]
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+my_color <- cbPalette[c(4, 6, 7, 1)]
+
 # plot bar graph
-ggplot(info, aes(x=answer_match)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
-  facet_wrap(~ answer, ncol = 3) + 
+ggplot(info, aes(x=answer_match, fill=answer.y)) + 
+  geom_bar(stat="count") +
+  facet_wrap(~ answer.x, ncol = 3) + 
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18),
-        strip.text.x = element_text(size = 14)) +
+        strip.text.x = element_text(size = 14),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   xlab("") + 
   ylab("Number of students")
 ```
 
 ```{r Save plot q4, echo=FALSE, eval=FALSE}
-ggsave("../figures/q4.png", width = 11, height = 10)
+ggsave("../figures/q4.png", width = 14, height = 12)
 ```
 
 
@@ -142,21 +151,25 @@ knw2 <- merge(data.table(section = rep(paste("User ", 1:11, sep = ""), each = 6)
               knw[, .(q_text = unique(q_text)), by = q], by = "q")
 
 knw3 <- merge(knw2, knw[,.(section, q, q_text, answer)], by = c("section", "q", "q_text"), all = T)
+knw3 <- merge(knw3, term, by = "section")
+knw3[, answer.y := factor(answer.y, levels = c("Fall 2018", "Fall 2019", "Spring 2019", "Other"))]
 
-techub <- knw3[q_text == "Where is the TEC Hub located?"][, answer := factor(answer, levels = c("4th Floor", "5th Floor", "6th Floor", "At the Burnaby Campus"))]
+techub <- knw3[q_text == "Where is the TEC Hub located?"][, answer.x := factor(answer.x, levels = c("4th Floor", "5th Floor", "6th Floor", "At the Burnaby Campus"))]
 
 # plot bar graph
-ggplot(techub, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(techub, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("Where is the TEC Hub located?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q5a, echo=FALSE, eval=FALSE}
@@ -167,45 +180,49 @@ ggsave("../figures/q5a.png", width = 9, height = 8)
 #### When can you start using services insured under the BCITSA Health and Dental Plan?
 
 ```{r Health and dental,  fig.height=8, fig.width=8, echo=FALSE}
-health_dental <- knw3[q_text == "When can you start using services insured under the BCITSA Health and Dental Plan?"][, answer := factor(answer, levels = c("Your first day of classes", "A week after the first day of classes", "8 weeks after the first day of classes", "Not until 2nd term"))]
+health_dental <- knw3[q_text == "When can you start using services insured under the BCITSA Health and Dental Plan?"][, answer.x := factor(answer.x, levels = c("Your first day of classes", "A week after the first day of classes", "8 weeks after the first day of classes", "Not until 2nd term"))]
 
 # plot bar graph
-ggplot(health_dental, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(health_dental, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("When can you start using services insured under \nthe BCITSA Health and Dental Plan?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q5b, echo=FALSE, eval=FALSE}
-ggsave("../figures/q5b.png", width = 9, height = 8)
+ggsave("../figures/q5b.png", width = 11, height = 8)
 ```
 
 
 #### What type of mental health services are provided by BCIT?
 
 ```{r Mental health,  fig.height=8, fig.width=8, echo=FALSE}
-mental_health <- knw3[q_text == "What type of mental health services are provided by BCIT?"][, answer := factor(answer, levels = c("In-person counselling", "Virtual-counselling", "Mindfulness workshops", "All of the above"))]
+mental_health <- knw3[q_text == "What type of mental health services are provided by BCIT?"][, answer.x := factor(answer.x, levels = c("In-person counselling", "Virtual-counselling", "Mindfulness workshops", "All of the above"))]
 
 # plot bar graph
-ggplot(mental_health, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(mental_health, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   scale_y_continuous(limits = c(0, 9), breaks = 0:9) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("What type of mental health services \nare provided by BCIT?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q5c, echo=FALSE, eval=FALSE}
@@ -216,20 +233,22 @@ ggsave("../figures/q5c.png", width = 9, height = 8)
 #### Learning and accessibility services provided by BCIT include, but are not limited to (i) peer tutoring, (ii) exam and program accommodations (e.g. extended exam times etc.), and (iii) note takers and readers. Out of the 3 examples, how many are you aware about?
 
 ```{r Learning and accessibility,  fig.height=8, fig.width=8, echo=FALSE}
-learning_access <- knw3[q_text %like% "Learning and accessibility services"][, answer := factor(answer, levels = c("0", "1", "2", "All"))]
+learning_access <- knw3[q_text %like% "Learning and accessibility services"][, answer.x := factor(answer.x, levels = c("0", "1", "2", "All"))]
 
 # plot bar graph
-ggplot(learning_access, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(learning_access, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   scale_y_continuous(limits = c(0, 9), breaks = 0:9) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("Learning and accessibility services")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q5d, echo=FALSE, eval=FALSE}
@@ -241,15 +260,18 @@ ggsave("../figures/q5d.png", width = 9, height = 8)
 
 ```{r SA advocate, fig.height=8, fig.width=8, echo=FALSE}
 sa <- knw3[q_text %like% "What is the role of the SA Advocate?"]
-sa[answer %like% "To provide", answer := "Correct option"]
+sa[answer.x %like% "To provide", answer.x := "Correct option"]
 
 # plot bar graph
-ggplot(sa, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(sa, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   scale_y_continuous(limits = c(0, 9), breaks = 0:9) +
   xlab("") + 
@@ -265,20 +287,22 @@ ggsave("../figures/q5e.png", width = 9, height = 8)
 #### Based on questions 14 through 18, how many were you able to answer because of the Learning Hub online orientation?
 
 ```{r Use of learning hub,  fig.height=8, fig.width=8, echo=FALSE}
-learning_hub <- knw3[q_text %like% "Based on questions 14 through 18"][, answer := factor(answer, levels = c("0", "1", "2", "3", "4", "5"))]
+learning_hub <- knw3[q_text %like% "Based on questions 14 through 18"][, answer.x := factor(answer.x, levels = c("0", "1", "2", "3", "4", "5"))]
 
 # plot bar graph
-ggplot(learning_hub, aes(x=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(learning_hub, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   scale_y_continuous(limits = c(0, 9), breaks = 0:9) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("Based on questions 14 through 18, how many were you \nable to answer because of the Learning Hub \nonline orientation?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q5f, echo=FALSE, eval=FALSE}
@@ -288,9 +312,9 @@ ggsave("../figures/q5f.png", width = 9, height = 8)
 #### Objective vs. subjective knowledge
 
 ```{r Object vs subject, echo=FALSE}
-subject <- knw3[q_text %like% "Based on questions 14 through 18"][, subject_knw := as.numeric(answer)/5*100]
+subject <- knw3[q_text %like% "Based on questions 14 through 18"][, subject_knw := as.numeric(answer.x)/5*100]
 
-object <- knw3[!(q_text %like% "Based on questions 14 through 18") & answer %like% "5th Floor|Your first day of classes|All of the above|To provide confidential|All"]
+object <- knw3[!(q_text %like% "Based on questions 14 through 18") & answer.x %like% "5th Floor|Your first day of classes|All of the above|To provide confidential|All"]
 object <- object[, .(correct = .N) , by = section]
 object[, object_knw := correct/5*100]
 
@@ -309,35 +333,41 @@ ggplot(corr, aes(x = subject_knw, y = object_knw)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
   xlab("Percentage of questions answered using \nknowledge from online orientation (%)") + 
   ylab("Percentage of correct answers (%)") + 
-  geom_label_repel(aes(label = section),
+  geom_label_repel(aes(label = section, fill = answer.y),
                   box.padding   = 0.35, 
                   point.padding = 0.5,
-                  segment.color = 'grey50')
+                  segment.color = 'grey50') +
+  scale_fill_manual(values = my_color, name = "Term started")
 ```
 
 ```{r Save plot q5g, echo=FALSE, eval=FALSE}
 ggsave("../figures/q5g.png", width = 9, height = 8)
+cor(x = corr$subject_knw, y = corr$object_knw, method = "pearson")
 ```
 
 ### Q6: How often do you log in to the online orientation?
 
 ```{r Usage of learning hub,  fig.height=8, fig.width=8, echo=FALSE}
-dt[q_text == "How often do you log in to the Learning Hub online orientation?" & responses == 1, .(section, answer)]
+merge(dt[q_text == "How often do you log in to the Learning Hub online orientation?" & responses == 1, .(section, answer)], term, by = "section")
 
 learning_hub <- dt[q_text == "How often do you log in to the Learning Hub online orientation?" & responses == 1, .(section, answer)][, answer := factor(answer, levels = c("One to two times a month", "One to two times a week", "More than two times a week", "Never"))]
 
+learning_hub <- merge(dt[q_text == "How often do you log in to the Learning Hub online orientation?" & responses == 1, .(section, answer)], term, by = "section")
+
 # plot bar graph
-ggplot(learning_hub, aes(x=answer, fill=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(learning_hub, aes(x=answer.x, fill=answer.y)) +
+  geom_bar(stat="count") +
   theme_bw() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        title = element_text(size=18)) +
+        title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   scale_x_discrete(drop=FALSE) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("How often do you log in to the online orientation?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q6, echo=FALSE, eval=FALSE}
@@ -362,8 +392,7 @@ ggplot(device, aes(x=answer, fill=answer)) +
         title = element_text(size=18)) +
   scale_x_discrete(drop=FALSE) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("What device do you use to access \nthe online orientation?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q7, echo=FALSE, eval=FALSE}
@@ -388,8 +417,7 @@ ggplot(browser, aes(x=answer, fill=answer)) +
         title = element_text(size=18)) +
   scale_x_discrete(drop=FALSE) +
   xlab("") + 
-  ylab("Number of students") +
-  ggtitle("What browser do you use to access \nthe online orientation?")
+  ylab("Number of students")
 ```
 
 ```{r Save plot q8, echo=FALSE, eval=FALSE}
@@ -400,22 +428,27 @@ ggsave("../figures/q8.png", width = 9, height = 8)
 ### Q9: Please rank the following characteristics of the Learning Hub online orientation tool on a scale of 1 (poor) to 5 (excellent).
 
 ```{r Feature, fig.height= 15, fig.width=5, echo=FALSE}
-feature <- dt[q_text %like% "Please rank the following characteristics" & responses == 1][, answer_match := factor(answer_match, levels = c("1", "2", "3", "4", "5"))]
+feature <- merge(dt[q_text %like% "Please rank the following characteristics" & responses == 1][, answer_match := factor(answer_match, levels = c("1", "2", "3", "4", "5"))], term, by = "section")
+
+feature[, answer.y := factor(answer.y, levels = c("Fall 2018", "Fall 2019", "Spring 2019", "Other"))]
 
 # plot bar graph
-ggplot(feature, aes(x=answer_match)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
-  facet_wrap(~ answer, ncol = 1) + 
+ggplot(feature, aes(x=answer_match, fill=answer.y)) +
+  geom_bar(stat="count") +
+  facet_wrap(~ answer.x, ncol = 1) + 
   theme_bw() +
   theme(axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        strip.text.x = element_text(size = 14)) +
+        strip.text.x = element_text(size = 14), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   xlab("") + 
   ylab("Number of students")
 ```
 
 ```{r Save plot q9, echo=FALSE, eval=FALSE}
-ggsave("../figures/q9.png", width = 5, height = 15)
+ggsave("../figures/q9.png", width = 7, height = 20)
 ```
 
 
@@ -450,20 +483,22 @@ dt[q_text == "How did you find out about the online orientation?", answer, by = 
 ### Q14: Were you given information on how to use the Learning Hub online orientation?
 
 ```{r Referral, fig.height=8, fig.width=8, echo=FALSE}
-dt[q_text == "Were you given information on how to use the Learning Hub online orientation?", answer, by = section]
+merge(dt[q_text == "Were you given information on how to use the Learning Hub online orientation?", answer, by = section], term, by = "section")
 
-referral <- dt[q_text == "Were you given information on how to use the Learning Hub online orientation?" & responses == 1, .(section, answer)]
+referral <- merge(dt[q_text == "Were you given information on how to use the Learning Hub online orientation?" & responses == 1, .(section, answer)], term, by = "section")
 
 # plot bar graph
-ggplot(referral, aes(x=answer, fill=answer)) + 
-  geom_bar(stat="count", fill="#0072B2", colour="black") +
+ggplot(referral, aes(x=answer.x, fill=answer.y)) + 
+  geom_bar(stat="count") +
   theme_bw() +
   theme(axis.text = element_text(size=14), 
         axis.title = element_text(face="bold", size=18), 
-        legend.position = "none", title = element_text(size=18)) +
+        legend.position = "none", title = element_text(size=18), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size= 12)) +
+  scale_fill_manual(values = my_color, name = "Term started") +
   xlab("") + 
   ylab("Number of students") +
-  ggtitle("Were you given information on how to use the \nLearning Hub online orientation?") +
   scale_y_continuous(breaks=seq(0, 8, 1))
 ```
 

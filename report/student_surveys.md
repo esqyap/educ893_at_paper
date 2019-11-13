@@ -17,6 +17,7 @@ editor_options:
 library(data.table)
 library(ggplot2)
 library(ggrepel)
+library(RColorBrewer)
 
 dt <- fread("../data/educ893_at_proj.csv", sep = ",")
 ```
@@ -85,8 +86,8 @@ There are 11 users in the dataset.
 
 
 ```
-##  [1] "Fall 2019" "Fall 2019" "Fall 2018" "Other"     "Other"    
-##  [6] "Fall 2019" "Fall 2019" "Jan-19"    "Other"     "Fall 2019"
+##  [1] "Fall 2019"   "Fall 2019"   "Fall 2018"   "Other"       "Other"      
+##  [6] "Fall 2019"   "Fall 2019"   "Spring 2019" "Other"       "Fall 2019"  
 ## [11] "Fall 2019"
 ```
 
@@ -180,22 +181,23 @@ dt[q_text == "What do you think is the purpose of the online orientation?", answ
 ![](student_surveys_files/figure-html/Object vs subject-1.png)<!-- -->
 
 
+
 ### Q6: How often do you log in to the online orientation?
 
 
 ```
-##     section                     answer
-##  1:  User 1                      Never
-##  2:  User 2   One to two times a month
-##  3:  User 3 More than two times a week
-##  4:  User 4                      Never
-##  5:  User 5                      Never
-##  6:  User 6   One to two times a month
-##  7:  User 7                      Never
-##  8:  User 8                      Never
-##  9:  User 9                      Never
-## 10: User 10                      Never
-## 11: User 11 More than two times a week
+##     section                   answer.x    answer.y
+##  1:  User 1                      Never   Fall 2019
+##  2: User 10                      Never   Fall 2019
+##  3: User 11 More than two times a week   Fall 2019
+##  4:  User 2   One to two times a month   Fall 2019
+##  5:  User 3 More than two times a week   Fall 2018
+##  6:  User 4                      Never       Other
+##  7:  User 5                      Never       Other
+##  8:  User 6   One to two times a month   Fall 2019
+##  9:  User 7                      Never   Fall 2019
+## 10:  User 8                      Never Spring 2019
+## 11:  User 9                      Never       Other
 ```
 
 ![](student_surveys_files/figure-html/Usage of learning hub-1.png)<!-- -->
@@ -335,30 +337,30 @@ dt[q_text == "What do you think is the purpose of the online orientation?", answ
 
 
 ```
-##     section answer
-##  1:  User 1    Yes
-##  2:  User 1     No
-##  3:  User 2    Yes
-##  4:  User 2     No
-##  5:  User 3    Yes
-##  6:  User 3     No
-##  7:  User 4    Yes
-##  8:  User 4     No
-##  9:  User 5    Yes
-## 10:  User 5     No
-## 11:  User 6    Yes
-## 12:  User 6     No
-## 13:  User 7    Yes
-## 14:  User 7     No
-## 15:  User 8    Yes
-## 16:  User 8     No
-## 17:  User 9    Yes
-## 18:  User 9     No
-## 19: User 10    Yes
-## 20: User 10     No
-## 21: User 11    Yes
-## 22: User 11     No
-##     section answer
+##     section answer.x    answer.y
+##  1:  User 1      Yes   Fall 2019
+##  2:  User 1       No   Fall 2019
+##  3: User 10      Yes   Fall 2019
+##  4: User 10       No   Fall 2019
+##  5: User 11      Yes   Fall 2019
+##  6: User 11       No   Fall 2019
+##  7:  User 2      Yes   Fall 2019
+##  8:  User 2       No   Fall 2019
+##  9:  User 3      Yes   Fall 2018
+## 10:  User 3       No   Fall 2018
+## 11:  User 4      Yes       Other
+## 12:  User 4       No       Other
+## 13:  User 5      Yes       Other
+## 14:  User 5       No       Other
+## 15:  User 6      Yes   Fall 2019
+## 16:  User 6       No   Fall 2019
+## 17:  User 7      Yes   Fall 2019
+## 18:  User 7       No   Fall 2019
+## 19:  User 8      Yes Spring 2019
+## 20:  User 8       No Spring 2019
+## 21:  User 9      Yes       Other
+## 22:  User 9       No       Other
+##     section answer.x    answer.y
 ```
 
 ![](student_surveys_files/figure-html/Referral-1.png)<!-- -->
